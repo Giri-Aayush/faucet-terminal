@@ -53,8 +53,6 @@ faucet-terminal req 0xYOUR_ADDRESS -n sn-sep
 # Starknet Sepolia (ETH)
 faucet-terminal req 0xYOUR_ADDRESS -n sn-sep --token ETH
 
-# Starknet Sepolia (both tokens)
-faucet-terminal req 0xYOUR_ADDRESS -n sn-sep --both
 ```
 
 ## Networks
@@ -79,7 +77,6 @@ limits, l   Show rate limits
 ```
 -n, --network   Network (required): eth-sep, sn-sep
 --token         Token type: ETH, STRK
---both          Request both tokens (Starknet only)
 --json          JSON output
 ```
 

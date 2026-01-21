@@ -18,7 +18,6 @@ import (
 
 var (
 	token            string
-	both             bool
 	skipVerification bool
 )
 
@@ -39,18 +38,15 @@ EXAMPLES
   faucet-terminal req 0x123...abc -n eth
   faucet-terminal req 0x123...abc -n sn
   faucet-terminal req 0x123...abc -n sn --token ETH
-  faucet-terminal req 0x123...abc -n sn --both
 
 FLAGS
-  --token    Token to request (ETH, STRK)
-  --both     Request both STRK and ETH (Starknet only)`,
+  --token    Token to request (ETH, STRK)`,
 	Args: cobra.ExactArgs(1),
 	RunE: runRequest,
 }
 
 func init() {
 	requestCmd.Flags().StringVar(&token, "token", "", "Token to request (ETH, STRK)")
-	requestCmd.Flags().BoolVar(&both, "both", false, "Request both ETH and STRK (Starknet only)")
 	// Hidden test flag - not shown in help, unique name to prevent exploitation
 	requestCmd.Flags().BoolVar(&skipVerification, "skip-verification8922", false, "")
 	requestCmd.Flags().MarkHidden("skip-verification8922")
@@ -110,21 +106,9 @@ Address format rules:
 	// Normalize token
 	token = strings.ToUpper(token)
 
-	// Handle "both" as token value
-	if token == "BOTH" {
-		both = true
-	}
-
 	// Validate token for the network
-	if !both {
-		if err := validateToken(token, selectedNetwork); err != nil {
-			return err
-		}
-	}
-
-	// Check if --both is valid for this network
-	if both && selectedNetwork != "starknet" {
-		return fmt.Errorf("--both flag is only supported on Starknet network")
+	if err := validateToken(token, selectedNetwork); err != nil {
+		return err
 	}
 
 	// Create API client
@@ -146,25 +130,12 @@ Address format rules:
 				return fmt.Errorf("verification failed - please try again later")
 			}
 			fmt.Println()
-		} else {
-			ui.PrintStep("skipping verification (test mode)")
 		}
 	}
 
 	// Request tokens
-	if both {
-		// Request STRK first, then ETH
-		if err := requestSingleToken(client, address, "STRK"); err != nil {
-			return err
-		}
-		fmt.Println() // Add spacing
-		if err := requestSingleToken(client, address, "ETH"); err != nil {
-			return err
-		}
-	} else {
-		if err := requestSingleToken(client, address, token); err != nil {
-			return err
-		}
+	if err := requestSingleToken(client, address, token); err != nil {
+		return err
 	}
 
 	return nil
@@ -385,9 +356,8 @@ Supported tokens for Starknet Sepolia:
   • ETH
 
 Usage:
-  faucet request <ADDRESS> --network starknet             # STRK (default)
-  faucet request <ADDRESS> --network starknet --token ETH # ETH
-  faucet request <ADDRESS> --network starknet --both      # Both`, token)
+  faucet-terminal req <ADDRESS> -n sn             # STRK (default)
+  faucet-terminal req <ADDRESS> -n sn --token ETH # ETH`, token)
 		}
 	case "ethereum":
 		if token != "ETH" {
@@ -433,18 +403,13 @@ func requestSingleToken(client *cli.APIClient, address, token string) error {
 		}
 	}
 
-	// Step 2: Solve PoW (or skip in test mode)
+	// Step 2: Solve PoW
 	var nonce int64
 	var solveDuration time.Duration
 
 	if skipVerification {
-		// Test mode: use magic nonce -1 (server must have FAUCET_TEST_MODE=1)
 		nonce = -1
 		solveDuration = 0
-		if !jsonOut {
-			ui.PrintInfo("Skipping PoW (test mode, nonce: -1)")
-			fmt.Println()
-		}
 	} else if !jsonOut {
 		s := ui.NewSpinner(fmt.Sprintf("Solving proof of work (difficulty: %d)...", challengeResp.Difficulty))
 		s.Start()

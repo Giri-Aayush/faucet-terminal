@@ -15,10 +15,20 @@ var (
 	jsonOut bool
 )
 
-// Network to API URL mapping
-var networkURLs = map[string]string{
-	"starknet": "https://patient-gabrielle-aayushgiri-683357f0.koyeb.app",
-	"ethereum": "https://patient-gabrielle-aayushgiri-683357f0.koyeb.app",
+// defaultAPIURL is set at build time via ldflags
+// Build with: go build -ldflags "-X github.com/Giri-Aayush/starknet-faucet/pkg/cli/commands.defaultAPIURL=https://your-api.com"
+var defaultAPIURL = ""
+
+// getAPIBaseURL returns the API base URL from environment or build-time default
+func getAPIBaseURL() string {
+	if url := os.Getenv("FAUCET_API_URL"); url != "" {
+		return url
+	}
+	if defaultAPIURL != "" {
+		return defaultAPIURL
+	}
+	// Fallback for development
+	return "http://localhost:8080"
 }
 
 // Network aliases for developer convenience
@@ -46,7 +56,6 @@ NETWORKS
 EXAMPLES
   faucet-terminal req 0x123...abc -n eth
   faucet-terminal req 0x123...abc -n sn --token ETH
-  faucet-terminal req 0x123...abc -n starknet --both
   faucet-terminal info -n eth
   faucet-terminal quota -n sn
 
@@ -132,13 +141,7 @@ func GetAPIURL() string {
 	if apiURL != "" {
 		return apiURL
 	}
-
-	resolved := resolveNetwork(network)
-	if url, ok := networkURLs[resolved]; ok {
-		return url
-	}
-
-	return networkURLs["starknet"]
+	return getAPIBaseURL()
 }
 
 // GetNetwork returns the selected network (resolved from alias)
