@@ -17,8 +17,8 @@ var (
 
 // Network to API URL mapping
 var networkURLs = map[string]string{
-	"starknet": "https://disgusted-melodee-aayushgiri-575fc666.koyeb.app",
-	"ethereum": "https://disgusted-melodee-aayushgiri-575fc666.koyeb.app",
+	"starknet": "https://patient-gabrielle-aayushgiri-683357f0.koyeb.app",
+	"ethereum": "https://patient-gabrielle-aayushgiri-683357f0.koyeb.app",
 }
 
 // Network aliases for developer convenience
@@ -62,7 +62,7 @@ FLAGS
   -h, --help      Show help
 
 https://github.com/Giri-Aayush/faucet-cli`,
-	Version: "1.1.0",
+	Version: "2.0.0",
 }
 
 // Execute runs the root command
