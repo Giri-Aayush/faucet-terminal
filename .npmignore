@@ -1,0 +1,65 @@
+# Source code (Go)
+*.go
+go.mod
+go.sum
+cmd/
+internal/
+pkg/
+chains/
+
+# Development files
+.env
+.env.*
+*.test
+*.out
+Makefile
+TEST_MANUAL.md
+
+# Documentation (except README)
+docs/
+ARCHITECTURE_FLOW.md
+SECURITY.md
+CONTRIBUTING.md
+CHANGELOG.md
+
+# Deployment configs
+deployments/
+.koyeb/
+.github/
+
+# IDE & editor
+.vscode/
+.idea/
+.claude/
+claude.md
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Binaries (downloaded on install, not published)
+faucet-linux-*
+faucet-macos-*
+faucet-windows-*
+bin/faucet-*
+
+# Testing
+*.log
+tmp/
+*.tmp
+
+# Build artifacts
+dist/
+build/
+
+# Redis
+dump.rdb
+
+# Scripts (except install.js)
+scripts/
+
+# Account/secret files
+account_info.txt
+new_account.txt
+new_secure_wallet.txt

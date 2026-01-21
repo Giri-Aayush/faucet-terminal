@@ -41,14 +41,14 @@ type Config struct {
 // getChainDir returns the directory where this chain's config.json is located
 func getChainDir() string {
 	// First, try relative to current working directory
-	if _, err := os.Stat("chains/ethereum-11155111/config.json"); err == nil {
-		return "chains/ethereum-11155111"
+	if _, err := os.Stat("chains/ethereum-sepolia/config.json"); err == nil {
+		return "chains/ethereum-sepolia"
 	}
 
 	// Try relative to executable
 	if execPath, err := os.Executable(); err == nil {
 		execDir := filepath.Dir(execPath)
-		chainDir := filepath.Join(execDir, "chains", "ethereum-11155111")
+		chainDir := filepath.Join(execDir, "chains", "ethereum-sepolia")
 		if _, err := os.Stat(filepath.Join(chainDir, "config.json")); err == nil {
 			return chainDir
 		}
@@ -61,7 +61,7 @@ func getChainDir() string {
 	}
 
 	// Final fallback
-	return "chains/ethereum-11155111"
+	return "chains/ethereum-sepolia"
 }
 
 // LoadConfig loads Ethereum configuration from local config.json and .env (secrets)

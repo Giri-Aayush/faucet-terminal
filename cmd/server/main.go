@@ -9,7 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/Giri-Aayush/starknet-faucet/chains"
-	ethereum "github.com/Giri-Aayush/starknet-faucet/chains/ethereum-11155111"
+	ethereum "github.com/Giri-Aayush/starknet-faucet/chains/ethereum-sepolia"
 	starknet "github.com/Giri-Aayush/starknet-faucet/chains/starknet-sepolia"
 	"github.com/Giri-Aayush/starknet-faucet/internal/api"
 	"github.com/Giri-Aayush/starknet-faucet/internal/cache"
