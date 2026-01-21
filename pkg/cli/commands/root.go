@@ -71,7 +71,7 @@ FLAGS
   -h, --help      Show help
 
 https://github.com/Giri-Aayush/faucet-terminal`,
-	Version: "2.0.2",
+	Version: "2.0.3",
 }
 
 // Execute runs the root command
@@ -85,9 +85,15 @@ func Execute() {
 func init() {
 	// Global flags with short versions
 	rootCmd.PersistentFlags().StringVarP(&network, "network", "n", "", "Network: starknet|sn-sep, ethereum|eth-sep")
-	rootCmd.PersistentFlags().StringVar(&apiURL, "api-url", "", "Override API URL")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
+	rootCmd.PersistentFlags().StringVar(&apiURL, "api-url", "", "")
+	rootCmd.PersistentFlags().MarkHidden("api-url")
+	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Verbose output")
+	rootCmd.PersistentFlags().MarkHidden("verbose")
 	rootCmd.PersistentFlags().BoolVar(&jsonOut, "json", false, "JSON output")
+
+	// Custom version template and shorthand
+	rootCmd.SetVersionTemplate("faucet-terminal version {{.Version}}\n")
+	rootCmd.Flags().BoolP("version", "v", false, "Print version")
 
 	// Add subcommands
 	rootCmd.AddCommand(requestCmd)

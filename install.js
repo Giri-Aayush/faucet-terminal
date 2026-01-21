@@ -8,7 +8,7 @@ const stream = require('stream');
 
 const pipeline = promisify(stream.pipeline);
 
-const VERSION = 'v2.0.2';
+const VERSION = 'v2.0.3';
 const GITHUB_REPO = 'Giri-Aayush/faucet-terminal';
 
 // Detect platform and architecture

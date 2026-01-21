@@ -14,19 +14,42 @@ Starknet Sepolia · Ethereum Sepolia
 
 ---
 
+## Installation
+
 ```bash
 npm install -g faucet-terminal
 ```
 
+## Quick Start
+
+```bash
+# Ethereum Sepolia (ETH)
+faucet-terminal request 0xYOUR_ADDRESS --network ethereum
+faucet-terminal req 0xYOUR_ADDRESS -n eth              # short version
+
+# Starknet Sepolia (STRK - default)
+faucet-terminal request 0xYOUR_ADDRESS --network starknet
+faucet-terminal req 0xYOUR_ADDRESS -n sn               # short version
+
+# Starknet Sepolia (ETH)
+faucet-terminal request 0xYOUR_ADDRESS --network starknet --token ETH
+faucet-terminal req 0xYOUR_ADDRESS -n sn --token ETH   # short version
 ```
-$ faucet-terminal req 0x742d35Cc6634C0532925a3b844Bc9e7595f8fE21 -n eth-sep
+
+## Example Output
+
+```
+$ faucet-terminal req 0x742d35Cc6634C0532925a3b844Bc9e7595f8fE21 -n eth
 
   faucet terminal
 
   network  ethereum
 
+  [Verification] What is 5 + 7? 12
+  Correct!
+
   ✔ Challenge received
-  ✔ Challenge solved in 12.3s
+  ✔ Challenge solved in 32.1s
   ✔ Transaction submitted!
 
   ────────────────────────────────────────────────────────
@@ -41,61 +64,127 @@ $ faucet-terminal req 0x742d35Cc6634C0532925a3b844Bc9e7595f8fE21 -n eth-sep
   ✔ Tokens will arrive in ~30 seconds
 ```
 
-## Quick Start
+## Supported Networks
 
-```bash
-# Ethereum Sepolia
-faucet-terminal req 0xYOUR_ADDRESS -n eth-sep
-
-# Starknet Sepolia (STRK)
-faucet-terminal req 0xYOUR_ADDRESS -n sn-sep
-
-# Starknet Sepolia (ETH)
-faucet-terminal req 0xYOUR_ADDRESS -n sn-sep --token ETH
-
-```
-
-## Networks
-
-| Network | Aliases | Tokens |
-|:--------|:--------|:-------|
-| Starknet Sepolia | `starknet` `sn` `sn-sep` | STRK, ETH |
-| Ethereum Sepolia | `ethereum` `eth` `eth-sep` | ETH |
+| Network | Full Name | Aliases | Tokens |
+|:--------|:----------|:--------|:-------|
+| Starknet Sepolia | `starknet` | `sn`, `sn-sep` | STRK (default), ETH |
+| Ethereum Sepolia | `ethereum` | `eth`, `eth-sep` | ETH |
 
 ## Commands
 
+### Request Tokens
+
+```bash
+# Full command
+faucet-terminal request <ADDRESS> --network <NETWORK> [--token <TOKEN>]
+
+# Short version
+faucet-terminal req <ADDRESS> -n <NETWORK> [--token <TOKEN>]
+
+# Shortest version
+faucet-terminal r <ADDRESS> -n <NETWORK>
 ```
-req, r      Request testnet tokens
-status, s   Check cooldown status
-info, i     View faucet info
-quota, q    Check remaining quota
-limits, l   Show rate limits
+
+**Examples:**
+```bash
+faucet-terminal request 0x123...abc --network ethereum           # ETH on Ethereum
+faucet-terminal req 0x123...abc -n eth                           # same, shorter
+faucet-terminal r 0x123...abc -n eth                             # same, shortest
+
+faucet-terminal request 0x123...abc --network starknet           # STRK on Starknet
+faucet-terminal req 0x123...abc -n sn                            # same, shorter
+
+faucet-terminal request 0x123...abc --network starknet --token ETH  # ETH on Starknet
+faucet-terminal req 0x123...abc -n sn --token ETH                   # same, shorter
+```
+
+### Check Status
+
+```bash
+# Full command
+faucet-terminal status <ADDRESS> --network <NETWORK>
+
+# Short version
+faucet-terminal s <ADDRESS> -n <NETWORK>
+```
+
+**Examples:**
+```bash
+faucet-terminal status 0x123...abc --network ethereum
+faucet-terminal s 0x123...abc -n eth
+```
+
+### View Faucet Info
+
+```bash
+# Full command
+faucet-terminal info --network <NETWORK>
+
+# Short version
+faucet-terminal i -n <NETWORK>
+```
+
+**Examples:**
+```bash
+faucet-terminal info --network ethereum
+faucet-terminal i -n eth
+```
+
+### Check Your Quota
+
+```bash
+# Full command
+faucet-terminal quota
+
+# Short version
+faucet-terminal q
+```
+
+### View Rate Limits
+
+```bash
+# Full command
+faucet-terminal limits
+
+# Short version
+faucet-terminal l
 ```
 
 ## Options
 
-```
--n, --network   Network (required): eth-sep, sn-sep
---token         Token type: ETH, STRK
---json          JSON output
-```
+| Option | Short | Description |
+|:-------|:------|:------------|
+| `--network` | `-n` | Network to use (required for most commands) |
+| `--token` | | Token to request: `ETH`, `STRK` |
+| `--json` | | Output in JSON format |
+| `--help` | `-h` | Show help |
 
 ## Rate Limits
 
 ```
-5 requests/day    per IP address
-1 request/hour    per token type
-24h cooldown      after daily limit
+5 requests/day     per IP address
+1 request/hour     per token type (ETH and STRK tracked separately)
+24h cooldown       after daily limit reached
 ```
 
 ## How It Works
 
 ```
-1. Submit address    →  Validate format
-2. Verification      →  Answer simple question
-3. Proof of Work     →  Solve SHA-256 challenge (~30s)
-4. Receive tokens    →  Transaction submitted
+1. Submit address    →  Validate format for the network
+2. Verification      →  Answer a simple math question
+3. Proof of Work     →  Solve SHA-256 challenge (~30-60s)
+4. Receive tokens    →  Transaction submitted to blockchain
 ```
+
+## Error Messages
+
+The CLI provides clear error messages when you hit rate limits:
+
+- `[HOURLY LIMIT]` - You requested this token within the last hour
+- `[DAILY LIMIT]` - You've used all 5 daily requests
+- `[FAUCET LIMIT]` - Faucet has temporarily reached its distribution limit
+- `[LOW BALANCE]` - Faucet balance is too low
 
 ## License
 

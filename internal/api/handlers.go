@@ -129,7 +129,7 @@ func (h *Handler) GetChallenge(c *fiber.Ctx) error {
 	}
 	if !canRequest {
 		return c.Status(fiber.StatusTooManyRequests).JSON(models.ErrorResponse{
-			Error: "Too many challenge requests. Please try again later.",
+			Error: "[CHALLENGE LIMIT] Too many PoW challenge requests this hour. Try again later.",
 		})
 	}
 
@@ -215,9 +215,16 @@ func (h *Handler) RequestTokens(c *fiber.Ctx) error {
 
 	// If in 24h cooldown after hitting limit
 	if !canRequest && cooldownEnd != nil {
-		hoursRemaining := time.Until(*cooldownEnd).Hours()
-		errorMsg := fmt.Sprintf("Daily limit reached. In 24-hour cooldown (%.1f hours remaining). Run 'faucet limits' for details.",
-			hoursRemaining)
+		remaining := time.Until(*cooldownEnd)
+		hours := int(remaining.Hours())
+		minutes := int(remaining.Minutes()) % 60
+		var timeStr string
+		if hours > 0 {
+			timeStr = fmt.Sprintf("%dh %dm", hours, minutes)
+		} else {
+			timeStr = fmt.Sprintf("%dm", minutes)
+		}
+		errorMsg := fmt.Sprintf("[DAILY LIMIT] You've used all 5 daily requests. 24-hour cooldown: %s remaining.", timeStr)
 		return c.Status(fiber.StatusTooManyRequests).JSON(models.ErrorResponse{
 			Error: errorMsg,
 		})
@@ -232,7 +239,7 @@ func (h *Handler) RequestTokens(c *fiber.Ctx) error {
 	// Check if there's enough quota
 	if !canRequest || (currentCount+requestCost) > h.config.MaxRequestsPerDayIP() {
 		used, _, _, _ := h.redis.GetIPDailyQuota(ctx, ip)
-		errorMsg := fmt.Sprintf("IP daily limit reached (%d/%d requests used). Run 'faucet limits' for details.",
+		errorMsg := fmt.Sprintf("[DAILY LIMIT] Request would exceed daily limit (%d/%d used). Wait for quota reset.",
 			used, h.config.MaxRequestsPerDayIP())
 		return c.Status(fiber.StatusTooManyRequests).JSON(models.ErrorResponse{
 			Error: errorMsg,
@@ -257,10 +264,9 @@ func (h *Handler) RequestTokens(c *fiber.Ctx) error {
 				})
 			}
 			if !canRequestToken {
-				minutesRemaining := int(time.Until(*nextTime).Minutes())
-				used, _, _, _ := h.redis.GetIPDailyQuota(ctx, ip)
-				errorMsg := fmt.Sprintf("%s hourly throttle active on %s. Next request in %d min. Daily quota: %d/%d used. Run 'faucet limits' for details.",
-					token, network, minutesRemaining, used, h.config.MaxRequestsPerDayIP())
+				minutesRemaining := int(time.Until(*nextTime).Minutes()) + 1 // +1 to round up
+				errorMsg := fmt.Sprintf("[HOURLY LIMIT] %s on %s: 1 request per hour. Try again in %d minutes.",
+					token, network, minutesRemaining)
 				return c.Status(fiber.StatusTooManyRequests).JSON(models.ErrorResponse{
 					Error: errorMsg,
 				})
@@ -276,10 +282,9 @@ func (h *Handler) RequestTokens(c *fiber.Ctx) error {
 			})
 		}
 		if !canRequestToken {
-			minutesRemaining := int(time.Until(*nextAvailable).Minutes())
-			used, _, _, _ := h.redis.GetIPDailyQuota(ctx, ip)
-			errorMsg := fmt.Sprintf("%s hourly throttle active on %s. Next request in %d min. Daily quota: %d/%d used. Run 'faucet limits' for details.",
-				req.Token, network, minutesRemaining, used, h.config.MaxRequestsPerDayIP())
+			minutesRemaining := int(time.Until(*nextAvailable).Minutes()) + 1 // +1 to round up
+			errorMsg := fmt.Sprintf("[HOURLY LIMIT] %s on %s: 1 request per hour. Try again in %d minutes.",
+				req.Token, network, minutesRemaining)
 			return c.Status(fiber.StatusTooManyRequests).JSON(models.ErrorResponse{
 				Error: errorMsg,
 			})
@@ -336,7 +341,7 @@ func (h *Handler) RequestTokens(c *fiber.Ctx) error {
 			zap.String("ip", ip),
 		)
 		return c.Status(fiber.StatusServiceUnavailable).JSON(models.ErrorResponse{
-			Error: "Faucet has reached its distribution limit. Please try again later.",
+			Error: "[FAUCET LIMIT] Faucet has temporarily reached its distribution limit. Please try again in an hour.",
 		})
 	}
 
@@ -366,7 +371,7 @@ func (h *Handler) RequestTokens(c *fiber.Ctx) error {
 			zap.String("ip", ip),
 		)
 		return c.Status(fiber.StatusServiceUnavailable).JSON(models.ErrorResponse{
-			Error: fmt.Sprintf("Faucet balance too low. Current %s balance: %.4f", req.Token, currentBalanceFloat),
+			Error: fmt.Sprintf("[LOW BALANCE] Faucet %s balance too low (%.4f). Please try again later.", req.Token, currentBalanceFloat),
 		})
 	}
 

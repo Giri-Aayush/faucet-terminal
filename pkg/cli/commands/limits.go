@@ -29,9 +29,7 @@ func runLimits(cmd *cobra.Command, args []string) error {
 
 	fmt.Println("  daily limit (per IP)")
 	fmt.Println("    5 requests per day")
-	fmt.Println("    single token = 1 request")
-	fmt.Println("    --both = 2 requests (Starknet only)")
-	fmt.Println("    24h cooldown after 5th request")
+	fmt.Println("    24h cooldown after limit reached")
 	fmt.Println()
 
 	fmt.Println("  hourly throttle (per token)")

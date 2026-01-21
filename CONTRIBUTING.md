@@ -1,6 +1,6 @@
-# Contributing to faucet-cli
+# Contributing to faucet-terminal
 
-Thank you for your interest in contributing to faucet-cli! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to faucet-terminal! This document provides guidelines and instructions for contributing.
 
 ## Table of Contents
 
@@ -37,14 +37,14 @@ Please be respectful and constructive in all interactions. We welcome contributo
 
 ```bash
 # Clone the repository
-git clone https://github.com/Giri-Aayush/faucet-cli.git
-cd faucet-cli
+git clone https://github.com/Giri-Aayush/faucet-terminal.git
+cd faucet-terminal
 
 # Install Go dependencies
 go mod download
 
 # Build the CLI
-go build -o faucet ./cmd/cli
+go build -o faucet-terminal ./cmd/cli
 
 # Build the server
 go build -o server ./cmd/server
@@ -73,7 +73,7 @@ Required variables:
 ## Project Structure
 
 ```
-faucet-cli/
+faucet-terminal/
 ├── chains/                 # Chain implementations (one folder per network)
 │   ├── chain.go           # Chain interface definition
 │   ├── starknet-sepolia/  # Starknet Sepolia implementation

@@ -1,6 +1,6 @@
 {
   "name": "faucet-terminal",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Multi-chain testnet faucet CLI - get tokens on Starknet and Ethereum testnets",
   "bin": {
     "faucet-terminal": "./bin/faucet-terminal.js"
