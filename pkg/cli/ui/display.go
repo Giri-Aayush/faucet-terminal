@@ -11,51 +11,58 @@ import (
 )
 
 var (
-	// Colors
-	cyan    = color.New(color.FgCyan).SprintFunc()
-	green   = color.New(color.FgGreen).SprintFunc()
-	red     = color.New(color.FgRed).SprintFunc()
-	yellow  = color.New(color.FgYellow).SprintFunc()
-	bold    = color.New(color.Bold).SprintFunc()
+	// Colors - minimal palette for clean UI
+	cyan   = color.New(color.FgCyan).SprintFunc()
+	green  = color.New(color.FgGreen).SprintFunc()
+	red    = color.New(color.FgRed).SprintFunc()
+	dim    = color.New(color.Faint).SprintFunc()
+	bold   = color.New(color.Bold).SprintFunc()
+	white  = color.New(color.FgWhite).SprintFunc()
 
-	// Symbols
-	checkMark = green("✓")
-	xMark     = red("✗")
-	arrow     = cyan("→")
+	// Symbols - clean and minimal
+	symbolSuccess = green("✔")
+	symbolError   = red("✖")
+	symbolInfo    = cyan("›")
+	symbolArrow   = dim("→")
 )
 
-// PrintBanner prints the faucet banner
+// PrintBanner prints a clean minimal banner
 func PrintBanner() {
-	title := "Faucet CLI"
-	subtitle := "Multi-Chain Testnet Tokens"
-	divider := strings.Repeat("─", 60)
-
 	fmt.Println()
-	fmt.Println(cyan(divider))
-	fmt.Printf("  %s\n", bold(title))
-	fmt.Printf("  %s\n", subtitle)
-	fmt.Println(cyan(divider))
+	fmt.Printf("  %s %s\n", bold("faucet"), dim("terminal"))
+	fmt.Println()
+}
+
+// PrintNetworkInfo prints the selected network
+func PrintNetworkInfo(network string) {
+	fmt.Printf("  %s %s\n", dim("network"), white(network))
 	fmt.Println()
 }
 
 // PrintSuccess prints a success message
 func PrintSuccess(message string) {
-	fmt.Printf("%s %s\n", checkMark, message)
+	fmt.Printf("  %s %s\n", symbolSuccess, message)
 }
 
 // PrintError prints an error message
 func PrintError(message string) {
-	fmt.Printf("%s %s\n", xMark, red(message))
+	fmt.Printf("  %s %s\n", symbolError, red(message))
 }
 
 // PrintInfo prints an info message
 func PrintInfo(message string) {
-	fmt.Printf("%s %s\n", arrow, message)
+	fmt.Printf("  %s %s\n", symbolInfo, message)
+}
+
+// PrintStep prints a step in progress
+func PrintStep(message string) {
+	fmt.Printf("  %s %s\n", symbolArrow, dim(message))
 }
 
 // NewSpinner creates a new spinner with a message
 func NewSpinner(message string) *spinner.Spinner {
-	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
+	s := spinner.New(spinner.CharSets[14], 80*time.Millisecond)
+	s.Prefix = "  "
 	s.Suffix = " " + message
 	s.Color("cyan")
 	return s
@@ -67,96 +74,113 @@ func PrintFaucetResponse(resp *models.FaucetResponse) {
 
 	// Check if this is a BOTH token response (multiple transactions)
 	if len(resp.Transactions) > 0 {
-		fmt.Println(strings.Repeat("━", 50))
 		for _, tx := range resp.Transactions {
-			fmt.Printf("  %s:  %s %s\n", bold(tx.Token), tx.Amount, tx.Token)
-			fmt.Printf("  %s  %s\n", bold("TX Hash:"), shortenHash(tx.TxHash))
-			fmt.Printf("  🔗 %s\n", cyan(tx.ExplorerURL))
-			fmt.Println()
+			printTransactionBox(tx.Token, tx.Amount, tx.TxHash, tx.ExplorerURL)
 		}
-		fmt.Println(strings.Repeat("━", 50))
 		fmt.Println()
 		PrintSuccess(resp.Message)
-		fmt.Println()
 		return
 	}
 
-	// Single token response (backwards compatible)
-	fmt.Println(strings.Repeat("━", 50))
-	fmt.Printf("  %s  %s %s\n", bold("Amount:"), resp.Amount, resp.Token)
-	fmt.Printf("  %s  %s\n", bold("TX Hash:"), shortenHash(resp.TxHash))
+	// Single token response
+	printTransactionBox(resp.Token, resp.Amount, resp.TxHash, resp.ExplorerURL)
 	fmt.Println()
-	fmt.Printf("  🔗 %s\n", cyan(resp.ExplorerURL))
-	fmt.Println(strings.Repeat("━", 50))
+	PrintSuccess("Tokens will arrive in ~30 seconds")
+}
+
+// printTransactionBox prints a clean transaction summary
+func printTransactionBox(token, amount, txHash, explorerURL string) {
+	fmt.Printf("  %s\n", dim(strings.Repeat("─", 52)))
 	fmt.Println()
-	PrintSuccess("Tokens will arrive in ~30 seconds.")
+	fmt.Printf("    %s  %s %s\n", dim("amount"), bold(amount), token)
+	fmt.Printf("    %s  %s\n", dim("tx"), shortenHash(txHash))
 	fmt.Println()
+	fmt.Printf("    %s\n", cyan(explorerURL))
+	fmt.Println()
+	fmt.Printf("  %s\n", dim(strings.Repeat("─", 52)))
 }
 
 // PrintStatusResponse prints a status response
 func PrintStatusResponse(resp *models.StatusResponse, address string) {
 	fmt.Println()
-	fmt.Printf("%s %s\n\n", bold("Address:"), shortenHash(address))
+	fmt.Printf("  %s %s\n", dim("address"), shortenHash(address))
+	fmt.Println()
 
 	if resp.CanRequest {
-		PrintSuccess("This address can request tokens now!")
+		PrintSuccess("Ready to request tokens")
 	} else {
-		PrintError("Address is in cooldown period")
+		PrintError("Cooldown active")
 		fmt.Println()
-		if resp.LastRequest != nil {
-			fmt.Printf("  Last request:  %s\n", resp.LastRequest.Format("January 02, 2006 at 3:04 PM"))
-		}
 		if resp.NextRequestTime != nil {
-			fmt.Printf("  Next request:  %s\n", resp.NextRequestTime.Format("January 02, 2006 at 3:04 PM"))
+			fmt.Printf("    %s %s\n", dim("available"), resp.NextRequestTime.Format("Jan 02 at 3:04 PM"))
 		}
 		if resp.RemainingHours != nil {
-			fmt.Printf("  Time remaining: %s\n", formatDuration(*resp.RemainingHours))
+			fmt.Printf("    %s %s\n", dim("remaining"), formatDuration(*resp.RemainingHours))
 		}
 	}
 	fmt.Println()
 }
 
-// PrintInfoResponse prints an info response
+// PrintInfoResponse prints faucet information
 func PrintInfoResponse(resp *models.InfoResponse) {
 	fmt.Println()
-	fmt.Println(bold("Faucet Information"))
-	fmt.Println(strings.Repeat("─", 50))
+	fmt.Printf("  %s\n", bold("Faucet Info"))
+	fmt.Printf("  %s\n", dim(strings.Repeat("─", 40)))
 	fmt.Println()
 
-	fmt.Printf("%s %s\n", bold("Network:"), resp.Network)
+	fmt.Printf("  %s  %s\n", dim("network"), resp.Network)
 	fmt.Println()
 
-	fmt.Println(bold("Distribution Limits:"))
-	fmt.Printf("  STRK per request:      %s STRK\n", resp.Limits.StrkPerRequest)
-	fmt.Printf("  ETH per request:       %s ETH\n", resp.Limits.EthPerRequest)
-	fmt.Printf("  Daily requests per IP: %d\n", resp.Limits.DailyRequestsPerIP)
-	fmt.Printf("  Token throttle:        %d hour per token\n", resp.Limits.TokenThrottleHours)
+	fmt.Printf("  %s\n", dim("limits"))
+	if resp.Limits.StrkPerRequest != "" && resp.Limits.StrkPerRequest != "0" {
+		fmt.Printf("    STRK   %s per request\n", resp.Limits.StrkPerRequest)
+	}
+	if resp.Limits.EthPerRequest != "" && resp.Limits.EthPerRequest != "0" {
+		fmt.Printf("    ETH    %s per request\n", resp.Limits.EthPerRequest)
+	}
+	fmt.Printf("    Daily  %d requests/IP\n", resp.Limits.DailyRequestsPerIP)
 	fmt.Println()
 
-	fmt.Println(bold("Proof of Work:"))
-	fmt.Printf("  Enabled:    %v\n", resp.PoW.Enabled)
-	fmt.Printf("  Difficulty: %d\n", resp.PoW.Difficulty)
+	fmt.Printf("  %s\n", dim("proof of work"))
+	fmt.Printf("    difficulty %d\n", resp.PoW.Difficulty)
 	fmt.Println()
 
-	fmt.Println(bold("Faucet Balance:"))
-	fmt.Printf("  STRK: %s\n", resp.FaucetBalance.STRK)
-	fmt.Printf("  ETH:  %s\n", resp.FaucetBalance.ETH)
+	fmt.Printf("  %s\n", dim("balance"))
+	if resp.FaucetBalance.STRK != "" && resp.FaucetBalance.STRK != "0" {
+		fmt.Printf("    STRK %s\n", resp.FaucetBalance.STRK)
+	}
+	if resp.FaucetBalance.ETH != "" && resp.FaucetBalance.ETH != "0" {
+		fmt.Printf("    ETH  %s\n", resp.FaucetBalance.ETH)
+	}
 	fmt.Println()
 }
 
 // PrintCooldownError prints a cooldown error with details
 func PrintCooldownError(nextRequestTime *time.Time, remainingHours *float64) {
 	fmt.Println()
-	PrintError("Address is in cooldown period")
+	PrintError("Cooldown active")
 	fmt.Println()
 	if nextRequestTime != nil {
-		fmt.Printf("  Next request:  %s\n", nextRequestTime.Format("January 02, 2006 at 3:04 PM"))
+		fmt.Printf("    %s %s\n", dim("available"), nextRequestTime.Format("Jan 02 at 3:04 PM"))
 	}
 	if remainingHours != nil {
-		fmt.Printf("  Time remaining: %s\n", formatDuration(*remainingHours))
+		fmt.Printf("    %s %s\n", dim("remaining"), formatDuration(*remainingHours))
 	}
 	fmt.Println()
-	fmt.Println("Try again later or use --help for more options.")
+}
+
+// PrintQuotaInfo prints quota information
+func PrintQuotaInfo(used, total int, inCooldown bool) {
+	fmt.Println()
+	fmt.Printf("  %s\n", bold("Daily Quota"))
+	fmt.Printf("  %s\n", dim(strings.Repeat("─", 30)))
+	fmt.Println()
+	fmt.Printf("  %s  %d/%d requests\n", dim("used"), used, total)
+	if inCooldown {
+		fmt.Printf("  %s  %s\n", dim("status"), red("in cooldown"))
+	} else {
+		fmt.Printf("  %s  %s\n", dim("status"), green("available"))
+	}
 	fmt.Println()
 }
 
@@ -172,29 +196,22 @@ func shortenHash(hash string) string {
 func formatDuration(hours float64) string {
 	if hours >= 24 {
 		days := int(hours / 24)
-		remainingHours := int(hours) % 24
-		if remainingHours == 0 {
-			return fmt.Sprintf("%d day%s", days, pluralize(days))
+		h := int(hours) % 24
+		if h == 0 {
+			return fmt.Sprintf("%dd", days)
 		}
-		return fmt.Sprintf("%d day%s %d hour%s", days, pluralize(days), remainingHours, pluralize(remainingHours))
+		return fmt.Sprintf("%dd %dh", days, h)
 	}
 
 	if hours >= 1 {
 		h := int(hours)
-		minutes := int((hours - float64(h)) * 60)
-		if minutes == 0 {
-			return fmt.Sprintf("%d hour%s", h, pluralize(h))
+		m := int((hours - float64(h)) * 60)
+		if m == 0 {
+			return fmt.Sprintf("%dh", h)
 		}
-		return fmt.Sprintf("%d hour%s %d minute%s", h, pluralize(h), minutes, pluralize(minutes))
+		return fmt.Sprintf("%dh %dm", h, m)
 	}
 
-	minutes := int(hours * 60)
-	return fmt.Sprintf("%d minute%s", minutes, pluralize(minutes))
-}
-
-func pluralize(n int) string {
-	if n == 1 {
-		return ""
-	}
-	return "s"
+	m := int(hours * 60)
+	return fmt.Sprintf("%dm", m)
 }

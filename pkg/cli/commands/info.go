@@ -10,18 +10,28 @@ import (
 )
 
 var infoCmd = &cobra.Command{
-	Use:   "info",
-	Short: "Get faucet information",
-	Long: `Get information about the faucet including limits, balances, and configuration.
+	Use:     "info",
+	Aliases: []string{"i"},
+	Short:   "View faucet information",
+	Long: `View faucet configuration, limits, and balances.
 
-Example:
-  starknet-faucet info`,
+USAGE
+  faucet-terminal info -n <network>
+
+EXAMPLES
+  faucet-terminal i -n eth
+  faucet-terminal info -n sn`,
 	RunE: runInfo,
 }
 
 func runInfo(cmd *cobra.Command, args []string) error {
-	// Create API client
-	client := cli.NewAPIClient(apiURL)
+	// Validate network first
+	if err := ValidateNetwork(); err != nil {
+		return err
+	}
+
+	// Create API client with correct URL for network
+	client := cli.NewAPIClient(GetAPIURL())
 
 	// Get info
 	resp, err := client.GetInfo()

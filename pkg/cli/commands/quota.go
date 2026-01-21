@@ -10,24 +10,28 @@ import (
 )
 
 var quotaCmd = &cobra.Command{
-	Use:   "quota",
-	Short: "Check your remaining rate limit quota",
-	Long: `Display your current rate limit usage and remaining quota.
+	Use:     "quota",
+	Aliases: []string{"q"},
+	Short:   "Check your remaining quota",
+	Long: `View your current rate limit usage and remaining quota.
 
-Shows:
-  • Daily request quota (used/total)
-  • STRK hourly throttle status
-  • ETH hourly throttle status
-  • Time until next available request
+USAGE
+  faucet-terminal quota -n <network>
 
-Example:
-  starknet-faucet quota`,
+EXAMPLES
+  faucet-terminal q -n eth
+  faucet-terminal quota -n sn`,
 	RunE: runQuota,
 }
 
 func runQuota(cmd *cobra.Command, args []string) error {
-	// Create API client
-	client := cli.NewAPIClient(apiURL)
+	// Validate network first
+	if err := ValidateNetwork(); err != nil {
+		return err
+	}
+
+	// Create API client with correct URL for network
+	client := cli.NewAPIClient(GetAPIURL())
 
 	// Get quota
 	resp, err := client.Get("/api/v1/quota")
@@ -169,7 +173,7 @@ func runQuota(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println()
-	fmt.Println("Run 'starknet-faucet limits' to see detailed rate limit rules")
+	fmt.Println("Run 'faucet-terminal limits -n <network>' for detailed rules")
 	fmt.Println()
 
 	return nil

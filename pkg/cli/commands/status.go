@@ -6,17 +6,21 @@ import (
 
 	"github.com/Giri-Aayush/starknet-faucet/pkg/cli"
 	"github.com/Giri-Aayush/starknet-faucet/pkg/cli/ui"
-	"github.com/Giri-Aayush/starknet-faucet/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
 var statusCmd = &cobra.Command{
-	Use:   "status <ADDRESS>",
-	Short: "Check cooldown status of an address",
-	Long: `Check if an address is in cooldown period and when it can request tokens again.
+	Use:     "status <address>",
+	Aliases: []string{"s"},
+	Short:   "Check cooldown status",
+	Long: `Check if an address is in cooldown and when it can request tokens.
 
-Example:
-  starknet-faucet status 0x0742...8d9f`,
+USAGE
+  faucet-terminal status <address> -n <network>
+
+EXAMPLES
+  faucet-terminal s 0x123...abc -n eth
+  faucet-terminal status 0x123...abc -n sn`,
 	Args: cobra.ExactArgs(1),
 	RunE: runStatus,
 }
@@ -24,13 +28,13 @@ Example:
 func runStatus(cmd *cobra.Command, args []string) error {
 	address := args[0]
 
-	// Validate address
-	if err := utils.ValidateStarknetAddress(address); err != nil {
-		return fmt.Errorf("invalid address: %w", err)
+	// Validate network first
+	if err := ValidateNetwork(); err != nil {
+		return err
 	}
 
-	// Create API client
-	client := cli.NewAPIClient(apiURL)
+	// Create API client with correct URL for network
+	client := cli.NewAPIClient(GetAPIURL())
 
 	// Get status
 	resp, err := client.GetStatus(address)

@@ -23,33 +23,27 @@ var (
 )
 
 var requestCmd = &cobra.Command{
-	Use:   "request <ADDRESS>",
-	Short: "Request testnet tokens",
+	Use:     "request <address>",
+	Aliases: []string{"req", "r"},
+	Short:   "Request testnet tokens",
 	Long: `Request testnet tokens for a blockchain address.
 
-IMPORTANT: The --network flag is REQUIRED.
+USAGE
+  faucet-terminal req <address> -n <network> [flags]
 
-Networks:
-  starknet  - Request STRK or ETH on Starknet Sepolia
-  ethereum  - Request ETH on Ethereum Sepolia
+NETWORKS
+  starknet, sn    STRK (default) or ETH
+  ethereum, eth   ETH
 
-Address Formats:
-  Starknet: 0x + up to 64 hex characters (e.g., 0x0742d35...8d9f)
-  Ethereum: 0x + exactly 40 hex characters (e.g., 0x742d35Cc6634C0532925a3b844Bc9e7595f8d9f1)
+EXAMPLES
+  faucet-terminal req 0x123...abc -n eth
+  faucet-terminal req 0x123...abc -n sn
+  faucet-terminal req 0x123...abc -n sn --token ETH
+  faucet-terminal req 0x123...abc -n sn --both
 
-Examples:
-  # Starknet Sepolia
-  faucet request 0x0742...8d9f --network starknet              # Request STRK (default)
-  faucet request 0x0742...8d9f --network starknet --token ETH  # Request ETH
-  faucet request 0x0742...8d9f --network starknet --both       # Request both
-
-  # Ethereum Sepolia
-  faucet request 0x742d35Cc6634C0532925a3b844Bc9e7595f8d9f1 --network ethereum
-
-Security:
-  Each request requires:
-  • Proof of Work challenge (computational work)
-  • CAPTCHA verification (human check)`,
+FLAGS
+  --token    Token to request (ETH, STRK)
+  --both     Request both STRK and ETH (Starknet only)`,
 	Args: cobra.ExactArgs(1),
 	RunE: runRequest,
 }
@@ -139,8 +133,7 @@ Address format rules:
 	// Print banner (unless JSON output)
 	if !jsonOut {
 		ui.PrintBanner()
-		ui.PrintInfo(fmt.Sprintf("Network: %s", selectedNetwork))
-		fmt.Println()
+		ui.PrintNetworkInfo(selectedNetwork)
 
 		// Skip captcha if --skip-verification is set
 		if !skipVerification {
@@ -152,9 +145,9 @@ Address format rules:
 			if !correct {
 				return fmt.Errorf("verification failed - please try again later")
 			}
-		} else {
-			ui.PrintInfo("Skipping verification (test mode)")
 			fmt.Println()
+		} else {
+			ui.PrintStep("skipping verification (test mode)")
 		}
 	}
 

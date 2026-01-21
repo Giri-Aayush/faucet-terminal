@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -20,43 +21,48 @@ var networkURLs = map[string]string{
 	"ethereum": "https://disgusted-melodee-aayushgiri-575fc666.koyeb.app",
 }
 
+// Network aliases for developer convenience
+var networkAliases = map[string]string{
+	"sn":      "starknet",
+	"stark":   "starknet",
+	"sn-sep":  "starknet",
+	"eth":     "ethereum",
+	"eth-sep": "ethereum",
+}
+
 // rootCmd represents the base command
 var rootCmd = &cobra.Command{
-	Use:   "faucet",
-	Short: "Multi-Chain Testnet Faucet CLI",
-	Long: `A CLI tool to request testnet tokens from multiple blockchain networks.
+	Use:   "faucet-terminal",
+	Short: "Multi-chain testnet token faucet",
+	Long: `faucet-terminal — Multi-chain testnet tokens
 
-Supported Networks:
-  • starknet  - Starknet Sepolia (STRK, ETH)
-  • ethereum  - Ethereum Sepolia (ETH)
+USAGE
+  faucet-terminal <command> [flags]
 
-Commands:
-  request <ADDRESS> [flags]  Request testnet tokens
-  quota                      Check YOUR remaining quota
-  limits                     Show detailed rate limit rules
-  status <ADDRESS>           Check request status
-  info                       View faucet information
+NETWORKS
+  starknet   Starknet Sepolia (aliases: sn, sn-sep)
+  ethereum   Ethereum Sepolia (aliases: eth, eth-sep)
 
-Examples:
-  # Starknet Sepolia
-  faucet request 0xYOUR_ADDRESS --network starknet              # Request STRK
-  faucet request 0xYOUR_ADDRESS --network starknet --token ETH  # Request ETH
-  faucet request 0xYOUR_ADDRESS --network starknet --both       # Request both
+EXAMPLES
+  faucet-terminal req 0x123...abc -n eth
+  faucet-terminal req 0x123...abc -n sn --token ETH
+  faucet-terminal req 0x123...abc -n starknet --both
+  faucet-terminal info -n eth
+  faucet-terminal quota -n sn
 
-  # Ethereum Sepolia
-  faucet request 0xYOUR_ADDRESS --network ethereum              # Request ETH
+COMMANDS
+  req, request    Request testnet tokens
+  status          Check address cooldown status
+  info            View faucet information
+  quota           Check your remaining quota
+  limits          Show rate limit rules
 
-Rate Limits (per IP):
-  • 5 requests per day
-  • 1 hour cooldown per token type
-  • After 5th request: 24-hour cooldown
+FLAGS
+  -n, --network   Network to use (required)
+  -h, --help      Show help
 
-Security:
-  • Proof of Work challenge (prevents bot abuse)
-  • CAPTCHA verification (human check)
-
-Need help? Visit: https://github.com/Giri-Aayush/faucet-cli`,
-	Version: "1.0.18",
+https://github.com/Giri-Aayush/faucet-cli`,
+	Version: "1.1.0",
 }
 
 // Execute runs the root command
@@ -68,11 +74,11 @@ func Execute() {
 }
 
 func init() {
-	// Global flags - network has no default, must be specified
-	rootCmd.PersistentFlags().StringVar(&network, "network", "", "Blockchain network (required: starknet, ethereum)")
-	rootCmd.PersistentFlags().StringVar(&apiURL, "api-url", "", "Override faucet API URL (optional)")
+	// Global flags with short versions
+	rootCmd.PersistentFlags().StringVarP(&network, "network", "n", "", "Network: starknet|sn-sep, ethereum|eth-sep")
+	rootCmd.PersistentFlags().StringVar(&apiURL, "api-url", "", "Override API URL")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
-	rootCmd.PersistentFlags().BoolVar(&jsonOut, "json", false, "Output in JSON format")
+	rootCmd.PersistentFlags().BoolVar(&jsonOut, "json", false, "JSON output")
 
 	// Add subcommands
 	rootCmd.AddCommand(requestCmd)
@@ -82,18 +88,30 @@ func init() {
 	rootCmd.AddCommand(quotaCmd)
 }
 
+// resolveNetwork converts network aliases to full network names
+func resolveNetwork(n string) string {
+	n = strings.ToLower(n)
+	if alias, ok := networkAliases[n]; ok {
+		return alias
+	}
+	return n
+}
+
 // ValidateNetwork checks if network is specified and valid
 func ValidateNetwork() error {
 	if network == "" {
-		return fmt.Errorf(`--network flag is required
+		return fmt.Errorf(`network required
 
-Please specify a network:
-  --network starknet    Starknet Sepolia (STRK, ETH)
-  --network ethereum    Ethereum Sepolia (ETH)
+Use -n or --network:
+  -n starknet    Starknet Sepolia (or: sn, sn-sep)
+  -n ethereum    Ethereum Sepolia (or: eth, eth-sep)
 
 Example:
-  faucet request 0xYOUR_ADDRESS --network starknet`)
+  faucet-terminal req 0xADDRESS -n eth`)
 	}
+
+	// Resolve aliases
+	network = resolveNetwork(network)
 
 	validNetworks := []string{"starknet", "ethereum"}
 	for _, valid := range validNetworks {
@@ -104,28 +122,26 @@ Example:
 
 	return fmt.Errorf(`invalid network: %s
 
-Supported networks:
-  starknet    Starknet Sepolia (STRK, ETH)
-  ethereum    Ethereum Sepolia (ETH)`, network)
+Supported:
+  starknet (sn)    Starknet Sepolia
+  ethereum (eth)   Ethereum Sepolia`, network)
 }
 
 // GetAPIURL returns the API URL for the selected network
 func GetAPIURL() string {
-	// If explicit URL provided, use it
 	if apiURL != "" {
 		return apiURL
 	}
 
-	// Otherwise, look up by network
-	if url, ok := networkURLs[network]; ok {
+	resolved := resolveNetwork(network)
+	if url, ok := networkURLs[resolved]; ok {
 		return url
 	}
 
-	// Default to starknet
 	return networkURLs["starknet"]
 }
 
-// GetNetwork returns the selected network
+// GetNetwork returns the selected network (resolved from alias)
 func GetNetwork() string {
-	return network
+	return resolveNetwork(network)
 }
