@@ -1,0 +1,14 @@
+{
+  "server": {
+    "port": 8080,
+    "log_level": "debug"
+  },
+  "pow": {
+    "difficulty": 3,
+    "challenge_ttl_seconds": 600
+  },
+  "rate_limits": {
+    "max_requests_per_day_ip": 100,
+    "max_challenges_per_hour": 100
+  }
+}

@@ -4,7 +4,7 @@
     "log_level": "info"
   },
   "pow": {
-    "difficulty": 3,
+    "difficulty": 5,
     "challenge_ttl_seconds": 300
   },
   "rate_limits": {

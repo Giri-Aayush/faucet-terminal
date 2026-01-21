@@ -15,6 +15,7 @@ starknet-faucet
 .env
 .env.local
 .env.production
+.env.example
 
 # Account files (CONTAINS PRIVATE KEYS - NEVER PUSH!)
 account_info.txt

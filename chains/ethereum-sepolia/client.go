@@ -58,7 +58,7 @@ func NewClient(cfg *Config) (*Client, error) {
 	}, nil
 }
 
-// TransferTokens transfers ETH to a recipient.
+// TransferTokens transfers ETH to a recipient using EIP-1559 transactions.
 func (c *Client) TransferTokens(
 	ctx context.Context,
 	recipient string,
@@ -78,21 +78,43 @@ func (c *Client) TransferTokens(
 		return "", fmt.Errorf("failed to get nonce: %w", err)
 	}
 
-	// Get suggested gas price
-	gasPrice, err := c.client.SuggestGasPrice(ctx)
+	// Get the latest block header to determine base fee
+	header, err := c.client.HeaderByNumber(ctx, nil)
 	if err != nil {
-		return "", fmt.Errorf("failed to get gas price: %w", err)
+		return "", fmt.Errorf("failed to get latest block header: %w", err)
 	}
+
+	// Get suggested priority fee (tip)
+	gasTipCap, err := c.client.SuggestGasTipCap(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get gas tip cap: %w", err)
+	}
+
+	// Calculate max fee per gas: baseFee * 2 + tip (standard practice for reliability)
+	baseFee := header.BaseFee
+	gasFeeCap := new(big.Int).Add(
+		new(big.Int).Mul(baseFee, big.NewInt(2)),
+		gasTipCap,
+	)
 
 	// Standard gas limit for ETH transfer
 	gasLimit := uint64(21000)
 
-	// Create the transaction
-	tx := types.NewTransaction(nonce, toAddress, amount, gasLimit, gasPrice, nil)
-
-	// Sign the transaction
+	// Create EIP-1559 dynamic fee transaction
 	chainID := big.NewInt(c.config.ChainID)
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), c.privateKey)
+	tx := types.NewTx(&types.DynamicFeeTx{
+		ChainID:   chainID,
+		Nonce:     nonce,
+		GasTipCap: gasTipCap,
+		GasFeeCap: gasFeeCap,
+		Gas:       gasLimit,
+		To:        &toAddress,
+		Value:     amount,
+		Data:      nil,
+	})
+
+	// Sign the transaction with the latest signer for this chain
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(chainID), c.privateKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to sign transaction: %w", err)
 	}

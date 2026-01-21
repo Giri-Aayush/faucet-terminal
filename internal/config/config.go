@@ -60,26 +60,31 @@ type TokenConfig struct {
 	MaxPerDay       float64 `json:"max_per_day"`
 }
 
-// Load loads global configuration from root config.json and .env
+// Load loads global configuration from config directory and .env
+// If FAUCET_TEST_MODE=true, loads config/config.test.json (relaxed settings)
+// Otherwise, loads config/config.json (production settings)
 func Load() (*Config, error) {
 	// Load .env for secrets
 	_ = godotenv.Load()
 
-	// Find root config.json
-	configPath, err := FindRootConfigFile()
+	// Determine which config to load based on FAUCET_TEST_MODE
+	isTestMode := getEnv("FAUCET_TEST_MODE", "false") == "true"
+
+	// Find the appropriate config file
+	configPath, err := FindConfigFile(isTestMode)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find config.json: %w", err)
+		return nil, fmt.Errorf("failed to find config file: %w", err)
 	}
 
-	// Read config.json
+	// Read config file
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read config.json: %w", err)
+		return nil, fmt.Errorf("failed to read %s: %w", configPath, err)
 	}
 
 	config := &Config{}
 	if err := json.Unmarshal(data, config); err != nil {
-		return nil, fmt.Errorf("failed to parse config.json: %w", err)
+		return nil, fmt.Errorf("failed to parse %s: %w", configPath, err)
 	}
 
 	// Load secrets from environment
@@ -93,18 +98,26 @@ func Load() (*Config, error) {
 	return config, nil
 }
 
-// FindRootConfigFile looks for config.json in current and parent directories
-func FindRootConfigFile() (string, error) {
-	// Try current directory first
-	if _, err := os.Stat("config.json"); err == nil {
-		return "config.json", nil
+// FindConfigFile looks for the appropriate config file based on test mode
+// Test mode: config/config.test.json
+// Production: config/config.json
+func FindConfigFile(isTestMode bool) (string, error) {
+	configFileName := "config.json"
+	if isTestMode {
+		configFileName = "config.test.json"
 	}
 
-	// Try to find it relative to executable
+	// Try config/ directory in current working directory
+	configPath := filepath.Join("config", configFileName)
+	if _, err := os.Stat(configPath); err == nil {
+		return configPath, nil
+	}
+
+	// Try relative to executable
 	execPath, err := os.Executable()
 	if err == nil {
 		execDir := filepath.Dir(execPath)
-		configPath := filepath.Join(execDir, "config.json")
+		configPath = filepath.Join(execDir, "config", configFileName)
 		if _, err := os.Stat(configPath); err == nil {
 			return configPath, nil
 		}
@@ -113,13 +126,20 @@ func FindRootConfigFile() (string, error) {
 	// Try working directory
 	wd, err := os.Getwd()
 	if err == nil {
-		configPath := filepath.Join(wd, "config.json")
+		configPath = filepath.Join(wd, "config", configFileName)
 		if _, err := os.Stat(configPath); err == nil {
 			return configPath, nil
 		}
 	}
 
-	return "", fmt.Errorf("config.json not found")
+	// Fallback: try root level config.json for backward compatibility
+	if !isTestMode {
+		if _, err := os.Stat("config.json"); err == nil {
+			return "config.json", nil
+		}
+	}
+
+	return "", fmt.Errorf("%s not found in config/ directory", configFileName)
 }
 
 // LoadChainConfig loads a chain's config.json from the specified directory

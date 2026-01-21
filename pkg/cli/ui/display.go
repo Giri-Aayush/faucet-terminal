@@ -26,8 +26,8 @@ var (
 
 // PrintBanner prints the faucet banner
 func PrintBanner() {
-	title := "Starknet Terminal Faucet"
-	subtitle := "Testnet Tokens. Terminal-Native."
+	title := "Faucet CLI"
+	subtitle := "Multi-Chain Testnet Tokens"
 	divider := strings.Repeat("─", 60)
 
 	fmt.Println()
