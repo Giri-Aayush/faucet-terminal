@@ -8,7 +8,7 @@ const stream = require('stream');
 
 const pipeline = promisify(stream.pipeline);
 
-const VERSION = 'v1.0.18';
+const VERSION = 'v2.0.0';
 const GITHUB_REPO = 'Giri-Aayush/faucet-cli';
 
 // Detect platform and architecture
@@ -16,7 +16,7 @@ function getPlatform() {
   const platform = process.platform;
   const arch = process.arch;
 
-  let binaryName = 'faucet';
+  let binaryName = 'faucet-terminal';
 
   if (platform === 'darwin') {
     if (arch === 'arm64') {
@@ -44,12 +44,11 @@ async function downloadBinary() {
     const binaryName = getPlatform();
     const downloadUrl = `https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/${binaryName}`;
     const binDir = path.join(__dirname, 'bin');
-    const binaryPath = path.join(binDir, process.platform === 'win32' ? 'faucet.exe' : 'faucet');
+    const binaryPath = path.join(binDir, process.platform === 'win32' ? 'faucet-terminal.exe' : 'faucet-terminal');
 
-    console.log(`📦 Downloading Faucet CLI ${VERSION}...`);
-    console.log(`   Platform: ${process.platform} (${process.arch})`);
-    console.log(`   Binary: ${binaryName}`);
-    console.log(`   This may take 20-40 seconds depending on your connection...`);
+    console.log(`\n  faucet-terminal ${VERSION}\n`);
+    console.log(`  platform  ${process.platform} (${process.arch})`);
+    console.log(`  binary    ${binaryName}\n`);
 
     // Ensure bin directory exists
     if (!fs.existsSync(binDir)) {
@@ -71,17 +70,13 @@ async function downloadBinary() {
             let downloadedBytes = 0;
             let lastPercent = 0;
 
-            // Progress indicator
-            console.log(`\n   Downloading...`);
-
             redirectResponse.on('data', (chunk) => {
               downloadedBytes += chunk.length;
               const percent = Math.floor((downloadedBytes / totalBytes) * 100);
 
-              // Update every 10%
               if (percent >= lastPercent + 10 || percent === 100) {
                 const bar = '█'.repeat(Math.floor(percent / 5)) + '░'.repeat(20 - Math.floor(percent / 5));
-                process.stdout.write(`\r   [${bar}] ${percent}%`);
+                process.stdout.write(`\r  [${bar}] ${percent}%`);
                 lastPercent = percent;
               }
             });
@@ -99,17 +94,13 @@ async function downloadBinary() {
           let downloadedBytes = 0;
           let lastPercent = 0;
 
-          // Progress indicator
-          console.log(`\n   Downloading...`);
-
           response.on('data', (chunk) => {
             downloadedBytes += chunk.length;
             const percent = Math.floor((downloadedBytes / totalBytes) * 100);
 
-            // Update every 10%
             if (percent >= lastPercent + 10 || percent === 100) {
               const bar = '█'.repeat(Math.floor(percent / 5)) + '░'.repeat(20 - Math.floor(percent / 5));
-              process.stdout.write(`\r   [${bar}] ${percent}%`);
+              process.stdout.write(`\r  [${bar}] ${percent}%`);
               lastPercent = percent;
             }
           });
@@ -132,15 +123,15 @@ async function downloadBinary() {
       fs.chmodSync(binaryPath, 0o755);
     }
 
-    console.log('✓ Installation complete!\n');
-    console.log('Run: faucet --help');
+    console.log('  ✓ installed\n');
+    console.log('  run: faucet-terminal --help\n');
 
   } catch (error) {
-    console.error('\n❌ Installation failed:', error.message);
-    console.error('\n📝 Manual installation:');
-    console.error(`   1. Download binary from: https://github.com/${GITHUB_REPO}/releases`);
-    console.error(`   2. Place it in your PATH`);
-    console.error(`   3. Run: faucet --help\n`);
+    console.error('\n  ✗ installation failed:', error.message);
+    console.error('\n  manual install:');
+    console.error(`    1. download from: https://github.com/${GITHUB_REPO}/releases`);
+    console.error(`    2. add to PATH`);
+    console.error(`    3. run: faucet-terminal --help\n`);
     process.exit(1);
   }
 }

@@ -3,11 +3,9 @@
 const { spawn } = require('child_process');
 const path = require('path');
 
-// Determine binary name based on platform
-const binaryName = process.platform === 'win32' ? 'faucet.exe' : 'faucet';
+const binaryName = process.platform === 'win32' ? 'faucet-terminal.exe' : 'faucet-terminal';
 const binaryPath = path.join(__dirname, binaryName);
 
-// Execute the binary with all arguments
 const child = spawn(binaryPath, process.argv.slice(2), {
   stdio: 'inherit',
   env: process.env
@@ -18,6 +16,6 @@ child.on('exit', (code) => {
 });
 
 child.on('error', (err) => {
-  console.error('Failed to start binary:', err.message);
+  console.error('failed to start:', err.message);
   process.exit(1);
 });
